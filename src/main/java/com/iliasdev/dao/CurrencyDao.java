@@ -118,6 +118,25 @@ public class CurrencyDao implements Dao<Integer, Currency> {
         }
     }
 
+    public Currency findByCode(String code) {
+        final String FIND_BY_CODE_SQL = """
+                SELECT * FROM currencies WHERE code = ?
+                """;
+        try (Connection connection = ConnectionManager.open();
+             var statement = connection.prepareStatement(FIND_BY_CODE_SQL))
+        {
+            statement.setString(1, code);
+            var resultSet = statement.executeQuery();
+            Currency currency = null;
+            if(resultSet.next()) {
+                currency = buildCurrency(resultSet);
+            }
+            return currency;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private Currency buildCurrency(ResultSet resultSet) throws SQLException {
         return new Currency(
                 resultSet.getInt("id"),
