@@ -115,6 +115,35 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
         }
     }
 
+    public ExchangeRates findByCodes(String baseCurrencyCode, String targetCurrencyCode) {
+        final String FIND_BY_CODES_SQL = """
+                select er.id as id, 
+                       baseCr.id as base_currency_id, 
+                       targetCr.id as target_currency_id, 
+                       er.rate as rate
+                from exchange_rates er
+                         join currencies baseCr on baseCr.id = er.base_currency_id
+                         join currencies targetCr on targetCr.id = er.target_currency_id
+                where baseCr.code = ?
+                  and targetCr.code = ?;
+                """;
+        try (Connection connection = ConnectionManager.open();
+             var statement = connection.prepareStatement(FIND_BY_CODES_SQL))
+        {
+            statement.setString(1, baseCurrencyCode);
+            statement.setString(2, targetCurrencyCode);
+            var resultSet = statement.executeQuery();
+
+            if(resultSet.next()) {
+                return buildExchangeRates(resultSet);
+            }
+            return null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     private ExchangeRates buildExchangeRates(ResultSet resultSet) throws SQLException {
         return new ExchangeRates(
                 resultSet.getInt("id"),
