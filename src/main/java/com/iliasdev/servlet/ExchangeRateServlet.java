@@ -17,6 +17,9 @@ import java.io.IOException;
 public class ExchangeRateServlet extends HttpServlet {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final ExchangeRatesDao exchangeRatesDao = ExchangeRatesDao.getInstance();
+    private static final CurrencyDao currencyDao = CurrencyDao.getInstance();
+
+
 
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String exchangeCodes = req.getPathInfo().replaceAll("/", "");
@@ -33,5 +36,26 @@ public class ExchangeRateServlet extends HttpServlet {
             printWriter.write(targetCurrencyCode);
         }
 
+    }
+
+    @Override
+    protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String exchangeCodes = req.getPathInfo().replaceAll("/", "");
+        String ratePam = req.getParameter("rate");
+
+        if(exchangeCodes.length() !=6 || ratePam.isBlank()){
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        String baseCurrencyCode = exchangeCodes.substring(0,3);
+        String targetCurrencyCode = exchangeCodes.substring(3);
+        double rate = Double.parseDouble(ratePam);
+
+        ExchangeRates exchangeRates = exchangeRatesDao.findByCodes(baseCurrencyCode, targetCurrencyCode);
+        exchangeRates.setRate(rate);
+        exchangeRatesDao.update(exchangeRates);
+
+        objectMapper.writeValue(resp.getWriter(), exchangeRates);
     }
 }
