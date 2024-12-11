@@ -1,5 +1,7 @@
 package com.iliasdev;
 
+import com.iliasdev.dao.CurrencyDao;
+import com.iliasdev.service.ExchangeCurrencyService;
 import com.iliasdev.util.ConnectionManager;
 
 import java.sql.SQLException;
@@ -8,8 +10,10 @@ import java.util.List;
 
 public class main {
     public static void main(String[] args) {
-        List<Integer> ids = getAllCurrency();
-        ids.forEach(System.out::println);
+        CurrencyDao currencyDao = CurrencyDao.getInstance();
+        ExchangeCurrencyService service = ExchangeCurrencyService.getInstance();
+
+        service.exchangeCurrency(currencyDao.findByCode("EUR").get(), currencyDao.findByCode("RUB").get(), 4.33);
 
     }
 
@@ -18,7 +22,7 @@ public class main {
 
         List<Integer> list = new ArrayList<Integer>();
 
-        try(var connection = ConnectionManager.open();
+        try(var connection = ConnectionManager.getConnection();
             var preparedStatement = connection.prepareStatement(sql))
         {
             var resultSet = preparedStatement.executeQuery();

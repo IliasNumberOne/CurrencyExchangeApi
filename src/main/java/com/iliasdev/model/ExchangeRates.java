@@ -1,53 +1,21 @@
 package com.iliasdev.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ExchangeRates {
     private int id;
-    private Currency baseCurrency;
-    private Currency targetCurrency;
+    private CurrencyModel baseCurrencyModel;
+    private CurrencyModel targetCurrencyModel;
     private double rate;
 
-    public ExchangeRates(int id, Currency baseCurrency, Currency targetCurrency, double rate) {
-        this.id = id;
-        this.baseCurrency = baseCurrency;
-        this.targetCurrency = targetCurrency;
-        this.rate = rate;
-    }
-
-    public ExchangeRates(Currency baseCurrency, Currency targetCurrency, double rate) {
-        this.baseCurrency = baseCurrency;
-        this.targetCurrency = targetCurrency;
-        this.rate = rate;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public Currency getBaseCurrency() {
-        return baseCurrency;
-    }
-
-    public void setBaseCurrency(Currency baseCurrency) {
-        this.baseCurrency = baseCurrency;
-    }
-
-    public Currency getTargetCurrency() {
-        return targetCurrency;
-    }
-
-    public void setTargetCurrency(Currency targetCurrency) {
-        this.targetCurrency = targetCurrency;
-    }
-
-    public double getRate() {
-        return rate;
-    }
-
-    public void setRate(double rate) {
+    public ExchangeRates(CurrencyModel baseCurrencyModel, CurrencyModel targetCurrencyModel, double rate) {
+        this.baseCurrencyModel = baseCurrencyModel;
+        this.targetCurrencyModel = targetCurrencyModel;
         this.rate = rate;
     }
 }

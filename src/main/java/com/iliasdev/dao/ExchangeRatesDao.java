@@ -1,7 +1,10 @@
 package com.iliasdev.dao;
 
+import com.iliasdev.exception.DataBaseOperationException;
+import com.iliasdev.exception.EntityExistException;
 import com.iliasdev.model.ExchangeRates;
 import com.iliasdev.util.ConnectionManager;
+import org.postgresql.util.PSQLException;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -9,6 +12,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
     private static final ExchangeRatesDao INSTANCE = new ExchangeRatesDao();
@@ -20,11 +24,11 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
                 INSERT INTO exchange_rates(base_currency_id, target_currency_id, rate) 
                 VALUES (?, ?, ?)
                 """;
-        try (Connection connection = ConnectionManager.open();
+        try (Connection connection = ConnectionManager.getConnection();
              var statement = connection.prepareStatement(CREATE_SQL, Statement.RETURN_GENERATED_KEYS))
         {
-            statement.setInt(1, exchangeRates.getBaseCurrency().getId());
-            statement.setInt(2, exchangeRates.getTargetCurrency().getId());
+            statement.setInt(1, exchangeRates.getBaseCurrencyModel().getId());
+            statement.setInt(2, exchangeRates.getTargetCurrencyModel().getId());
             statement.setDouble(3, exchangeRates.getRate());
             statement.executeUpdate();
 
@@ -35,7 +39,21 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
 
             return exchangeRates;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            if(e instanceof PSQLException){
+                PSQLException exception = (PSQLException) e;
+                if(exception.getSQLState().equals("23505")){
+                    throw new EntityExistException(
+                            String.format(
+                                    "Exchange rate '%s' to '%s' already exists",
+                                    exchangeRates.getBaseCurrencyModel().getCode(),
+                                    exchangeRates.getTargetCurrencyModel().getCode()));
+                }
+            }
+            throw new DataBaseOperationException(
+                    String.format("Failed to save exchange rates '%s' to '%s' to the database",
+                            exchangeRates.getBaseCurrencyModel().getCode(),
+                            exchangeRates.getTargetCurrencyModel().getCode())
+            );
         }
     }
 
@@ -44,7 +62,7 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
         final String FIND_BY_ID = """
                 SELECT * FROM exchange_rates WHERE id = ?
                 """;
-        try (Connection connection = ConnectionManager.open();
+        try (Connection connection = ConnectionManager.getConnection();
              var statement = connection.prepareStatement(FIND_BY_ID)) 
         {
             statement.setInt(1, id);
@@ -52,7 +70,7 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
             return buildExchangeRates(resultSet);
             
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataBaseOperationException("Failed to find exchange rates with id: " + id + "from the database");
         }
     }
 
@@ -61,7 +79,7 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
         final String FIND_ALL_SQL = """
                 SELECT * FROM exchange_rates
                 """;
-        try (Connection connection = ConnectionManager.open();
+        try (Connection connection = ConnectionManager.getConnection();
              var statement = connection.prepareStatement(FIND_ALL_SQL))
         {
             var resultSet = statement.executeQuery();
@@ -73,30 +91,31 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
 
             return exchangeRatesList;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataBaseOperationException("Failed to find exchange rates from the database");
         }
 
 
     }
 
     @Override
-    public void update(ExchangeRates exchangeRates) {
+    public ExchangeRates update(ExchangeRates exchangeRates) {
         final String UPDATE_SQL = """
                 UPDATE exchange_rates
                 SET base_currency_id = ?, target_currency_id = ?, rate = ?
                 WHERE id = ?
                 """;
-        try (Connection connection = ConnectionManager.open();
+        try (Connection connection = ConnectionManager.getConnection();
              var statement = connection.prepareStatement(UPDATE_SQL))
         {
-            statement.setInt(1, exchangeRates.getBaseCurrency().getId());
-            statement.setInt(2, exchangeRates.getTargetCurrency().getId());
+            statement.setInt(1, exchangeRates.getBaseCurrencyModel().getId());
+            statement.setInt(2, exchangeRates.getTargetCurrencyModel().getId());
             statement.setDouble(3, exchangeRates.getRate());
             statement.setInt(4, exchangeRates.getId());
             statement.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataBaseOperationException("Failed to update exchange rates with id: " + exchangeRates.getId() + "from the database");
         }
+        return exchangeRates;
     }
 
     @Override
@@ -105,17 +124,17 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
                 DELETE FROM exchange_rates
                 WHERE id = ?
                 """;
-        try (Connection connection = ConnectionManager.open();
-        var statement = connection.prepareStatement(DELETE_SQL))
+        try (Connection connection = ConnectionManager.getConnection();
+             var statement = connection.prepareStatement(DELETE_SQL))
         {
             statement.setInt(1, exchangeRates.getId());
             statement.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataBaseOperationException("Failed to delete exchange rates with id: " + exchangeRates.getId() + "from the database");
         }
     }
 
-    public ExchangeRates findByCodes(String baseCurrencyCode, String targetCurrencyCode) {
+    public Optional<ExchangeRates> findByCodes(String baseCurrencyCode, String targetCurrencyCode) {
         final String FIND_BY_CODES_SQL = """
                 select er.id as id, 
                        baseCr.id as base_currency_id, 
@@ -127,7 +146,7 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
                 where baseCr.code = ?
                   and targetCr.code = ?;
                 """;
-        try (Connection connection = ConnectionManager.open();
+        try (Connection connection = ConnectionManager.getConnection();
              var statement = connection.prepareStatement(FIND_BY_CODES_SQL))
         {
             statement.setString(1, baseCurrencyCode);
@@ -135,11 +154,50 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
             var resultSet = statement.executeQuery();
 
             if(resultSet.next()) {
-                return buildExchangeRates(resultSet);
+                return Optional.of(buildExchangeRates(resultSet));
             }
-            return null;
+            return Optional.empty();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataBaseOperationException(
+                    String.format("Failed to find exchange rates with codes '%s' to '%s' from the database",
+                            baseCurrencyCode, targetCurrencyCode)
+            );
+        }
+    }
+
+    public Optional<ExchangeRates> findByCrossConvert(String baseCurrencyCode, String targetCurrencyCode) {
+        final String FIND_BY_CROSS_CONVERT_SQL = """
+                select er1.id as id,
+                       baseCr1.id as base_currency_id,
+                       baseCr2.id as target_currency_id,
+                       round(er1.rate / er2.rate, 4) as rate
+                from exchange_rates er1
+                         join currencies baseCr1 on baseCr1.id = er1.base_currency_id
+                         join exchange_rates er2 on er2.target_currency_id = er1.target_currency_id
+                         join currencies baseCr2 on baseCr2.id = er2.base_currency_id
+                         join currencies tc on tc.id = er1.target_currency_id
+                where baseCr1.code = ?
+                  and baseCr2.code = ?
+                LIMIT 1;
+                """;
+
+        try (Connection connection = ConnectionManager.getConnection();
+             var statement = connection.prepareStatement(FIND_BY_CROSS_CONVERT_SQL))
+        {
+            statement.setString(1, baseCurrencyCode);
+            statement.setString(2, targetCurrencyCode);
+            var resultSet = statement.executeQuery();
+
+            if(resultSet.next()) {
+                return Optional.of(buildExchangeRates(resultSet));
+            }
+            return Optional.empty();
+
+        } catch (SQLException e) {
+            throw new DataBaseOperationException(
+                    String.format("Failed to find exchange rates with cross convert '%s' to '%s' from the database",
+                            baseCurrencyCode, targetCurrencyCode)
+            );
         }
     }
 

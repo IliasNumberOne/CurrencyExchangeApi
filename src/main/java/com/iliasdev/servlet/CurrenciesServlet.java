@@ -2,7 +2,8 @@ package com.iliasdev.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iliasdev.dao.CurrencyDao;
-import com.iliasdev.model.Currency;
+import com.iliasdev.model.CurrencyModel;
+import com.iliasdev.util.ValidationUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -12,8 +13,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
-import static jakarta.servlet.http.HttpServletResponse.*;
-
 @WebServlet("/currencies")
 public class CurrenciesServlet extends HttpServlet {
     private static final CurrencyDao currencyDao = CurrencyDao.getInstance();
@@ -21,8 +20,8 @@ public class CurrenciesServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        List<Currency> currencyList = currencyDao.findAll();
-        objectMapper.writeValue(resp.getWriter(), currencyList);
+        List<CurrencyModel> currencyModelList = currencyDao.findAll();
+        objectMapper.writeValue(resp.getWriter(), currencyModelList);
     }
 
     @Override
@@ -31,24 +30,11 @@ public class CurrenciesServlet extends HttpServlet {
         String code = req.getParameter("code");
         String sign = req.getParameter("sign");
 
-        if (name == null || name.isBlank()) {
-            resp.setStatus(SC_BAD_REQUEST);
+        CurrencyModel currencyModel = new CurrencyModel(code, name, sign);
+        ValidationUtil.validate(currencyModel);
 
-            return;
-        }
-        if (code == null || code.isBlank()) {
-            resp.setStatus(SC_BAD_REQUEST);
+        currencyModel = currencyDao.create(currencyModel);
 
-            return;
-        }
-        if (sign == null || sign.isBlank()) {
-            resp.setStatus(SC_BAD_REQUEST);
-
-            return;
-        }
-
-
-        Currency currency = currencyDao.create(new Currency(code, name, sign));
-        objectMapper.writeValue(resp.getWriter(), currency);
+        objectMapper.writeValue(resp.getWriter(), currencyModel);
     }
 }

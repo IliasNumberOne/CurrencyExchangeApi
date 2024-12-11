@@ -3,7 +3,11 @@ package com.iliasdev.servlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iliasdev.dao.CurrencyDao;
 import com.iliasdev.dao.ExchangeRatesDao;
+import com.iliasdev.dto.ExchangeRatesRequestDto;
+import com.iliasdev.exception.InvalidParameterException;
+import com.iliasdev.exception.NotFoundException;
 import com.iliasdev.model.*;
+import com.iliasdev.util.ValidationUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -33,22 +37,29 @@ public class ExchangeRatesServlet extends HttpServlet {
         final String targetCurrencyCode = req.getParameter("targetCurrencyCode");
         final String rate = req.getParameter("rate");
 
-
-        if(baseCurrencyCode.isBlank() || targetCurrencyCode.isBlank() || rate.isBlank()) {
-            resp.setStatus(SC_BAD_REQUEST);
-            return;
+        if(rate == null || rate.isBlank()) {
+            throw new InvalidParameterException("Missing parameter rate");
         }
 
-        Currency baseCurrency = currencyDao.findByCode(baseCurrencyCode);
-        Currency targetCurrency = currencyDao.findByCode(targetCurrencyCode);
-        double rateDouble = Double.parseDouble(rate);
+        ExchangeRatesRequestDto exchangeRatesRequestDto = new ExchangeRatesRequestDto(baseCurrencyCode, targetCurrencyCode, parseToDouble(rate));
+        ValidationUtil.validate(exchangeRatesRequestDto);
 
-        if(baseCurrency == null || targetCurrency == null) {
-            resp.setStatus(SC_BAD_REQUEST);
-            resp.sendError(1, "One or both of currency codes don't exist");
-        }
+        CurrencyModel baseCurrencyModel = currencyDao.findByCode(baseCurrencyCode).orElseThrow(() -> new NotFoundException("Currency with code " + baseCurrencyCode + " not found"));
+        CurrencyModel targetCurrencyModel = currencyDao.findByCode(targetCurrencyCode).orElseThrow(() -> new NotFoundException("Currency with code " + targetCurrencyCode + " not found"));
+        double rateDouble = parseToDouble(rate);
 
-        ExchangeRates exchangeRates = exchangeRatesDao.create(new ExchangeRates(baseCurrency, targetCurrency, rateDouble));
+
+        ExchangeRates exchangeRates = exchangeRatesDao.create(new ExchangeRates(baseCurrencyModel, targetCurrencyModel, rateDouble));
+
+        resp.setStatus(SC_CREATED);
         objectMapper.writeValue(resp.getWriter(), exchangeRates);
+    }
+
+    private static double parseToDouble(String rate) {
+        try{
+            return Double.parseDouble(rate);
+        } catch (NumberFormatException e) {
+            throw new InvalidParameterException("Parameter rate must be a number");
+        }
     }
 }
