@@ -21,7 +21,7 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
     @Override
     public ExchangeRates create(ExchangeRates exchangeRates) {
         final String CREATE_SQL = """
-                INSERT INTO exchange_rates(base_currency_id, target_currency_id, rate) 
+                INSERT INTO exchange_rates(base_currency_id, target_currency_id, rate)
                 VALUES (?, ?, ?)
                 """;
         try (Connection connection = ConnectionManager.getConnection();
@@ -58,7 +58,7 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
     }
 
     @Override
-    public ExchangeRates findById(Integer id) {
+    public Optional<ExchangeRates> findById(Integer id) {
         final String FIND_BY_ID = """
                 SELECT * FROM exchange_rates WHERE id = ?
                 """;
@@ -67,7 +67,10 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
         {
             statement.setInt(1, id);
             var resultSet = statement.executeQuery();
-            return buildExchangeRates(resultSet);
+            if(resultSet.next()) {
+                return Optional.of(buildExchangeRates(resultSet));
+            }
+            return Optional.empty();
             
         } catch (SQLException e) {
             throw new DataBaseOperationException("Failed to find exchange rates with id: " + id + "from the database");
@@ -136,9 +139,9 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
 
     public Optional<ExchangeRates> findByCodes(String baseCurrencyCode, String targetCurrencyCode) {
         final String FIND_BY_CODES_SQL = """
-                select er.id as id, 
-                       baseCr.id as base_currency_id, 
-                       targetCr.id as target_currency_id, 
+                select er.id as id,
+                       baseCr.id as base_currency_id,
+                       targetCr.id as target_currency_id,
                        er.rate as rate
                 from exchange_rates er
                          join currencies baseCr on baseCr.id = er.base_currency_id
@@ -205,8 +208,8 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
     private ExchangeRates buildExchangeRates(ResultSet resultSet) throws SQLException {
         return new ExchangeRates(
                 resultSet.getInt("id"),
-                currencyDao.findById(resultSet.getInt("base_currency_id")),
-                currencyDao.findById(resultSet.getInt("target_currency_id")),
+                currencyDao.findById(resultSet.getInt("base_currency_id")).get(),
+                currencyDao.findById(resultSet.getInt("target_currency_id")).get(),
                 resultSet.getDouble("rate")
         );
     }

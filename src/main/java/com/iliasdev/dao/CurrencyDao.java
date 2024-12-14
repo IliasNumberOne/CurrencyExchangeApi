@@ -51,7 +51,7 @@ public class CurrencyDao implements Dao<Integer, CurrencyModel> {
     }
 
     @Override
-    public CurrencyModel findById(Integer id) {
+    public Optional<CurrencyModel> findById(Integer id) {
         final String FIND_BY_ID_SQL = """
                 SELECT * FROM currencies WHERE id = ?
                 """;
@@ -61,12 +61,11 @@ public class CurrencyDao implements Dao<Integer, CurrencyModel> {
             statement.setInt(1, id);
             var resultSet = statement.executeQuery();
 
-            CurrencyModel currencyModel = null;
             if(resultSet.next()) {
-                currencyModel = buildCurrency(resultSet);
+                return Optional.of(buildCurrency(resultSet));
             }
 
-            return currencyModel;
+            return Optional.empty();
 
         } catch (SQLException e) {
             throw new DataBaseOperationException("Failed to find currency with id: " + id + " from the database");
