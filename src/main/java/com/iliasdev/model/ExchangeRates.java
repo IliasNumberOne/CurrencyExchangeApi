@@ -9,13 +9,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ExchangeRates {
     private int id;
-    private CurrencyModel baseCurrencyModel;
-    private CurrencyModel targetCurrencyModel;
+    private CurrencyModel baseCurrency;
+    private CurrencyModel targetCurrency;
     private double rate;
 
-    public ExchangeRates(CurrencyModel baseCurrencyModel, CurrencyModel targetCurrencyModel, double rate) {
-        this.baseCurrencyModel = baseCurrencyModel;
-        this.targetCurrencyModel = targetCurrencyModel;
+    public ExchangeRates(CurrencyModel baseCurrency, CurrencyModel targetCurrency, double rate) {
+        this.baseCurrency = baseCurrency;
+        this.targetCurrency = targetCurrency;
         this.rate = rate;
     }
 }

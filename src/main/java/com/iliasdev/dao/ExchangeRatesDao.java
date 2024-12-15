@@ -2,6 +2,7 @@ package com.iliasdev.dao;
 
 import com.iliasdev.exception.DataBaseOperationException;
 import com.iliasdev.exception.EntityExistException;
+import com.iliasdev.exception.NotFoundException;
 import com.iliasdev.model.ExchangeRates;
 import com.iliasdev.util.ConnectionManager;
 import org.postgresql.util.PSQLException;
@@ -27,8 +28,8 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
         try (Connection connection = ConnectionManager.getConnection();
              var statement = connection.prepareStatement(CREATE_SQL, Statement.RETURN_GENERATED_KEYS))
         {
-            statement.setInt(1, exchangeRates.getBaseCurrencyModel().getId());
-            statement.setInt(2, exchangeRates.getTargetCurrencyModel().getId());
+            statement.setInt(1, exchangeRates.getBaseCurrency().getId());
+            statement.setInt(2, exchangeRates.getTargetCurrency().getId());
             statement.setDouble(3, exchangeRates.getRate());
             statement.executeUpdate();
 
@@ -45,14 +46,14 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
                     throw new EntityExistException(
                             String.format(
                                     "Exchange rate '%s' to '%s' already exists",
-                                    exchangeRates.getBaseCurrencyModel().getCode(),
-                                    exchangeRates.getTargetCurrencyModel().getCode()));
+                                    exchangeRates.getBaseCurrency().getCode(),
+                                    exchangeRates.getTargetCurrency().getCode()));
                 }
             }
             throw new DataBaseOperationException(
                     String.format("Failed to save exchange rates '%s' to '%s' to the database",
-                            exchangeRates.getBaseCurrencyModel().getCode(),
-                            exchangeRates.getTargetCurrencyModel().getCode())
+                            exchangeRates.getBaseCurrency().getCode(),
+                            exchangeRates.getTargetCurrency().getCode())
             );
         }
     }
@@ -110,8 +111,8 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
         try (Connection connection = ConnectionManager.getConnection();
              var statement = connection.prepareStatement(UPDATE_SQL))
         {
-            statement.setInt(1, exchangeRates.getBaseCurrencyModel().getId());
-            statement.setInt(2, exchangeRates.getTargetCurrencyModel().getId());
+            statement.setInt(1, exchangeRates.getBaseCurrency().getId());
+            statement.setInt(2, exchangeRates.getTargetCurrency().getId());
             statement.setDouble(3, exchangeRates.getRate());
             statement.setInt(4, exchangeRates.getId());
             statement.executeUpdate();
@@ -206,10 +207,15 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
 
 
     private ExchangeRates buildExchangeRates(ResultSet resultSet) throws SQLException {
+        int baseCurrencyId = resultSet.getInt("base_currency_id");
+        int targetCurrencyId = resultSet.getInt("target_currency_id");
+
         return new ExchangeRates(
                 resultSet.getInt("id"),
-                currencyDao.findById(resultSet.getInt("base_currency_id")).get(),
-                currencyDao.findById(resultSet.getInt("target_currency_id")).get(),
+                currencyDao.findById(baseCurrencyId)
+                        .orElseThrow(() -> new NotFoundException("Currency with id " + baseCurrencyId + " not found" )),
+                currencyDao.findById(targetCurrencyId)
+                        .orElseThrow(() -> new NotFoundException("Currency with id " + targetCurrencyId + " not found" )),
                 resultSet.getDouble("rate")
         );
     }

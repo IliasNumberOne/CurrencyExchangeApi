@@ -21,8 +21,8 @@ public class ExchangeCurrencyService {
                         )));
 
         return new ExchangeCurrencyDto(
-                exchangeRates.getBaseCurrencyModel(),
-                exchangeRates.getTargetCurrencyModel(),
+                exchangeRates.getBaseCurrency(),
+                exchangeRates.getTargetCurrency(),
                 exchangeRates.getRate(),
                 amount,
                 exchangeRates.getRate() * amount
@@ -51,8 +51,8 @@ public class ExchangeCurrencyService {
         }
 
         ExchangeRates directExchangeRates = new ExchangeRates(
-                exchangeRates.get().getTargetCurrencyModel(),
-                exchangeRates.get().getBaseCurrencyModel(),
+                exchangeRates.get().getTargetCurrency(),
+                exchangeRates.get().getBaseCurrency(),
                 1/ exchangeRates.get().getRate()
         );
         return Optional.of(directExchangeRates);

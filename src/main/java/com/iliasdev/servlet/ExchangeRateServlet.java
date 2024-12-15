@@ -27,6 +27,14 @@ public class ExchangeRateServlet extends HttpServlet {
     private static final ExchangeRatesDao exchangeRatesDao = ExchangeRatesDao.getInstance();
     private static final CurrencyDao currencyDao = CurrencyDao.getInstance();
 
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (req.getMethod().equalsIgnoreCase("PATCH")) {
+            doPatch(req, resp);
+        } else {
+            super.service(req, resp);
+        }
+    }
 
 
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -52,15 +60,16 @@ public class ExchangeRateServlet extends HttpServlet {
     @Override
     protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String exchangeCodes = req.getPathInfo().replaceAll("/", "");
-        String rate = req.getParameter("rate");
+        String parameter = req.getReader().readLine();
 
         if(exchangeCodes.length() !=6){
             throw new InvalidParameterException("Currency codes provided in an incorrect format");
         }
 
-        if(rate == null || rate.isBlank()) {
+        if(parameter == null || !parameter.contains("rate")) {
             throw new InvalidParameterException("Missing parameter rate");
         }
+        String rate = parameter.replace("rate=", "");
 
         String baseCurrencyCode = exchangeCodes.substring(0,3);
         String targetCurrencyCode = exchangeCodes.substring(3);
@@ -86,5 +95,12 @@ public class ExchangeRateServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             throw new InvalidParameterException("Parameter rate must be a number");
         }
+    }
+
+    @Override
+    protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setHeader("Access-Control-Allow-Origin", "*");
+        resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+        resp.setStatus(200);
     }
 }
