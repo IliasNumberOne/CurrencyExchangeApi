@@ -8,13 +8,13 @@ import com.iliasdev.exception.InvalidParameterException;
 import com.iliasdev.exception.NotFoundException;
 import com.iliasdev.model.*;
 import com.iliasdev.util.ValidationUtil;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 
 import static jakarta.servlet.http.HttpServletResponse.*;
@@ -26,13 +26,13 @@ public class ExchangeRatesServlet extends HttpServlet {
     private static final CurrencyDao currencyDao = CurrencyDao.getInstance();
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         List<ExchangeRates> exchangeRatesList = exchangeRatesDao.findAll();
         objectMapper.writeValue(resp.getWriter(), exchangeRatesList);
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         final String baseCurrencyCode = req.getParameter("baseCurrencyCode");
         final String targetCurrencyCode = req.getParameter("targetCurrencyCode");
         final String rate = req.getParameter("rate");
@@ -41,12 +41,12 @@ public class ExchangeRatesServlet extends HttpServlet {
             throw new InvalidParameterException("Missing parameter rate");
         }
 
-        ExchangeRatesRequestDto exchangeRatesRequestDto = new ExchangeRatesRequestDto(baseCurrencyCode, targetCurrencyCode, parseToDouble(rate));
+        ExchangeRatesRequestDto exchangeRatesRequestDto = new ExchangeRatesRequestDto(baseCurrencyCode, targetCurrencyCode, parseToBigDecimal(rate));
         ValidationUtil.validate(exchangeRatesRequestDto);
 
         CurrencyModel baseCurrencyModel = currencyDao.findByCode(baseCurrencyCode).orElseThrow(() -> new NotFoundException("Currency with code " + baseCurrencyCode + " not found"));
         CurrencyModel targetCurrencyModel = currencyDao.findByCode(targetCurrencyCode).orElseThrow(() -> new NotFoundException("Currency with code " + targetCurrencyCode + " not found"));
-        double rateDouble = parseToDouble(rate);
+        BigDecimal rateDouble = parseToBigDecimal(rate);
 
 
         ExchangeRates exchangeRates = exchangeRatesDao.create(new ExchangeRates(baseCurrencyModel, targetCurrencyModel, rateDouble));
@@ -55,9 +55,9 @@ public class ExchangeRatesServlet extends HttpServlet {
         objectMapper.writeValue(resp.getWriter(), exchangeRates);
     }
 
-    private static double parseToDouble(String rate) {
+    private static BigDecimal parseToBigDecimal(String rate) {
         try{
-            return Double.parseDouble(rate);
+            return BigDecimal.valueOf(Double.parseDouble(rate));
         } catch (NumberFormatException e) {
             throw new InvalidParameterException("Parameter rate must be a number");
         }

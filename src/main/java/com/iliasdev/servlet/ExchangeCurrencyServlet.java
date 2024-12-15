@@ -9,13 +9,13 @@ import com.iliasdev.exception.NotFoundException;
 import com.iliasdev.model.*;
 import com.iliasdev.service.ExchangeCurrencyService;
 import com.iliasdev.util.ValidationUtil;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 
 @WebServlet("/exchange")
 public class ExchangeCurrencyServlet extends HttpServlet {
@@ -24,7 +24,7 @@ public class ExchangeCurrencyServlet extends HttpServlet {
     private static final ExchangeCurrencyService exchangeCurrencyService = ExchangeCurrencyService.getInstance();
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws  IOException {
         final String baseCurrencyCode = req.getParameter("from");
         final String targetCurrencyCode = req.getParameter("to");
         final String amount = req.getParameter("amount");
@@ -45,9 +45,9 @@ public class ExchangeCurrencyServlet extends HttpServlet {
         objectMapper.writeValue(resp.getWriter(), exchangeCurrencyDto);
     }
 
-    private static double parseAmount(String amountPam) {
+    private static BigDecimal parseAmount(String amountPam) {
         try{
-            return Double.parseDouble(amountPam);
+            return BigDecimal.valueOf(Double.parseDouble(amountPam));
         } catch (NumberFormatException e) {
             throw new InvalidParameterException("Parameter amount must be a number");
         }

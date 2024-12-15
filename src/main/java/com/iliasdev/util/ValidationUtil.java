@@ -6,6 +6,7 @@ import com.iliasdev.dto.ExchangeRatesRequestDto;
 import com.iliasdev.exception.InvalidParameterException;
 import com.iliasdev.model.CurrencyModel;
 
+import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,7 +35,7 @@ public class ValidationUtil {
     public static void validate(ExchangeRatesRequestDto exchangeRatesRequestDto) {
         String baseCurrencyCode = exchangeRatesRequestDto.getBaseCurrencyCode();
         String targetCurrencyCode = exchangeRatesRequestDto.getTargetCurrencyCode();
-        double rate = exchangeRatesRequestDto.getRate();
+        BigDecimal rate = exchangeRatesRequestDto.getRate();
 
         if(baseCurrencyCode == null || baseCurrencyCode.isBlank()) {
             throw new InvalidParameterException("Missing parameter base currency code");
@@ -42,7 +43,7 @@ public class ValidationUtil {
         if(targetCurrencyCode == null || targetCurrencyCode.isBlank()) {
             throw new InvalidParameterException("Missing parameter target currency code");
         }
-        if(rate < 0) {
+        if(rate.compareTo(BigDecimal.ZERO) < 0) {
             throw new InvalidParameterException("Invalid parameter - rate must be non-negative");
         }
 
@@ -54,7 +55,7 @@ public class ValidationUtil {
     public static void validate(ExchangeCurrencyRequestDto exchangeCurrencyRequestDto) {
         String baseCurrencyCode = exchangeCurrencyRequestDto.getBaseCurrencyCode();
         String targetCurrencyCode = exchangeCurrencyRequestDto.getTargetCurrencyCode();
-        double amount = exchangeCurrencyRequestDto.getAmount();
+        BigDecimal amount = exchangeCurrencyRequestDto.getAmount();
 
         if(baseCurrencyCode == null || baseCurrencyCode.isBlank()) {
             throw new InvalidParameterException("Missing parameter base currency code");
@@ -62,7 +63,7 @@ public class ValidationUtil {
         if(targetCurrencyCode == null || targetCurrencyCode.isBlank()) {
             throw new InvalidParameterException("Missing parameter target currency code");
         }
-        if(amount < 0) {
+        if(amount.compareTo(BigDecimal.ZERO) < 0) {
             throw new InvalidParameterException("Invalid parameter - amount must be non-negative");
         }
 

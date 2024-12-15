@@ -30,7 +30,7 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
         {
             statement.setInt(1, exchangeRates.getBaseCurrency().getId());
             statement.setInt(2, exchangeRates.getTargetCurrency().getId());
-            statement.setDouble(3, exchangeRates.getRate());
+            statement.setBigDecimal(3, exchangeRates.getRate());
             statement.executeUpdate();
 
             var keys = statement.getGeneratedKeys();
@@ -113,7 +113,7 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
         {
             statement.setInt(1, exchangeRates.getBaseCurrency().getId());
             statement.setInt(2, exchangeRates.getTargetCurrency().getId());
-            statement.setDouble(3, exchangeRates.getRate());
+            statement.setBigDecimal(3, exchangeRates.getRate());
             statement.setInt(4, exchangeRates.getId());
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -216,7 +216,7 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
                         .orElseThrow(() -> new NotFoundException("Currency with id " + baseCurrencyId + " not found" )),
                 currencyDao.findById(targetCurrencyId)
                         .orElseThrow(() -> new NotFoundException("Currency with id " + targetCurrencyId + " not found" )),
-                resultSet.getDouble("rate")
+                resultSet.getBigDecimal("rate")
         );
     }
 

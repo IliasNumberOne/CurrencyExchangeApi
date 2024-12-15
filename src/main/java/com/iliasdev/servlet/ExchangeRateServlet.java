@@ -1,12 +1,9 @@
 package com.iliasdev.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iliasdev.dao.CurrencyDao;
 import com.iliasdev.dao.ExchangeRatesDao;
-import com.iliasdev.dto.ExchangeRatesRequestDto;
 import com.iliasdev.exception.InvalidParameterException;
 import com.iliasdev.exception.NotFoundException;
-import com.iliasdev.model.CurrencyModel;
 import com.iliasdev.model.ExchangeRates;
 import com.iliasdev.util.ValidationUtil;
 import jakarta.servlet.ServletException;
@@ -16,16 +13,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.Currency;
-import java.util.Optional;
-
-import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import java.math.BigDecimal;
 
 @WebServlet("/exchangeRate/*")
 public class ExchangeRateServlet extends HttpServlet {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final ExchangeRatesDao exchangeRatesDao = ExchangeRatesDao.getInstance();
-    private static final CurrencyDao currencyDao = CurrencyDao.getInstance();
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -37,7 +30,7 @@ public class ExchangeRateServlet extends HttpServlet {
     }
 
 
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String exchangeCodes = req.getPathInfo().replaceAll("/", "");
 
         if(exchangeCodes.length() != 6) {
@@ -58,7 +51,7 @@ public class ExchangeRateServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String exchangeCodes = req.getPathInfo().replaceAll("/", "");
         String parameter = req.getReader().readLine();
 
@@ -80,15 +73,15 @@ public class ExchangeRateServlet extends HttpServlet {
         ExchangeRates exchangeRates = exchangeRatesDao.findByCodes(baseCurrencyCode, targetCurrencyCode)
                 .orElseThrow(() -> new NotFoundException("Exchange rate with codes " + baseCurrencyCode + " to " + targetCurrencyCode + " not found"));
 
-        exchangeRates.setRate(parseToDouble(rate));
+        exchangeRates.setRate(parseToBigDecimal(rate));
         exchangeRatesDao.update(exchangeRates);
         objectMapper.writeValue(resp.getWriter(), exchangeRates);
     }
 
-    private static double parseToDouble(String rate) {
+    private static BigDecimal parseToBigDecimal(String rate) {
         try{
-            double rate1 = Double.parseDouble(rate);
-            if(rate1 < 0){
+            BigDecimal rate1 = BigDecimal.valueOf(Double.parseDouble(rate));
+            if(rate1.compareTo(BigDecimal.ZERO) < 0){
                 throw new InvalidParameterException("Rate must be a non-negative number");
             }
             return rate1;
@@ -98,7 +91,7 @@ public class ExchangeRateServlet extends HttpServlet {
     }
 
     @Override
-    protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doOptions(HttpServletRequest req, HttpServletResponse resp) {
         resp.setHeader("Access-Control-Allow-Origin", "*");
         resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
         resp.setStatus(200);
