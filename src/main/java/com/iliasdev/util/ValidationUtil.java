@@ -58,7 +58,7 @@ public class ValidationUtil {
 
         if(baseCurrencyCode == null || baseCurrencyCode.isBlank()) {
             throw new InvalidParameterException("Missing parameter base currency code");
-        }e
+        }
         if(targetCurrencyCode == null || targetCurrencyCode.isBlank()) {
             throw new InvalidParameterException("Missing parameter target currency code");
         }
