@@ -81,8 +81,8 @@ public class ExchangeRateServlet extends HttpServlet {
     private static BigDecimal parseToBigDecimal(String rate) {
         try{
             BigDecimal rate1 = BigDecimal.valueOf(Double.parseDouble(rate));
-            if(rate1.compareTo(BigDecimal.ZERO) < 0){
-                throw new InvalidParameterException("Rate must be a non-negative number");
+            if(rate1.compareTo(BigDecimal.ZERO) <= 0){
+                throw new InvalidParameterException("Rate must be a non-negative number or zero");
             }
             return rate1;
         } catch (NumberFormatException e) {

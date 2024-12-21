@@ -43,7 +43,7 @@ public class ValidationUtil {
         if(targetCurrencyCode == null || targetCurrencyCode.isBlank()) {
             throw new InvalidParameterException("Missing parameter target currency code");
         }
-        if(rate.compareTo(BigDecimal.ZERO) < 0) {
+        if(rate.compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidParameterException("Invalid parameter - rate must be non-negative");
         }
 
@@ -64,7 +64,7 @@ public class ValidationUtil {
             throw new InvalidParameterException("Missing parameter target currency code");
         }
         if(amount.compareTo(BigDecimal.ZERO) < 0) {
-            throw new InvalidParameterException("Invalid parameter - amount must be non-negative");
+            throw new InvalidParameterException("Invalid parameter - amount must be non-negative or zero");
         }
 
         validateCurrencyCode(baseCurrencyCode);
