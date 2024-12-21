@@ -44,7 +44,7 @@ public class ValidationUtil {
             throw new InvalidParameterException("Missing parameter target currency code");
         }
         if(rate.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new InvalidParameterException("Invalid parameter - rate must be non-negative");
+            throw new InvalidParameterException("Invalid parameter - rate must be non-negative or zero");
         }
 
         validateCurrencyCode(baseCurrencyCode);
