@@ -41,8 +41,14 @@ public class ExchangeCurrencyService {
             exchangeRates = getReverseExchangeRate(baseCurrencyCode, targetCurrencyCode);
         }
 
+        //Find cross rate where targets are same
         if(exchangeRates.isEmpty()) {
-            exchangeRates = exchangeRatesDao.findByCrossConvert(baseCurrencyCode, targetCurrencyCode);
+            exchangeRates = exchangeRatesDao.findCrossRateByTargets(baseCurrencyCode, targetCurrencyCode);
+        }
+
+        //Find cross rate where bases are same
+        if(exchangeRates.isEmpty()) {
+            exchangeRates = exchangeRatesDao.findCrossRateByBases(baseCurrencyCode, targetCurrencyCode);
         }
 
         return exchangeRates;

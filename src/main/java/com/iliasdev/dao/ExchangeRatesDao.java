@@ -169,7 +169,7 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
         }
     }
 
-    public Optional<ExchangeRates> findByCrossConvert(String baseCurrencyCode, String targetCurrencyCode) {
+    public Optional<ExchangeRates> findCrossRateByTargets(String baseCurrencyCode, String targetCurrencyCode) {
         final String FIND_BY_CROSS_CONVERT_SQL = """
                 select er1.id as id,
                        baseCr1.id as base_currency_id,
@@ -180,6 +180,42 @@ public class ExchangeRatesDao implements Dao<Integer, ExchangeRates>{
                          join exchange_rates er2 on er2.target_currency_id = er1.target_currency_id
                          join currencies baseCr2 on baseCr2.id = er2.base_currency_id
                          join currencies tc on tc.id = er1.target_currency_id
+                where baseCr1.code = ?
+                  and baseCr2.code = ?
+                LIMIT 1;
+                """;
+
+        try (Connection connection = ConnectionManager.getConnection();
+             var statement = connection.prepareStatement(FIND_BY_CROSS_CONVERT_SQL))
+        {
+            statement.setString(1, baseCurrencyCode);
+            statement.setString(2, targetCurrencyCode);
+            var resultSet = statement.executeQuery();
+
+            if(resultSet.next()) {
+                return Optional.of(buildExchangeRates(resultSet));
+            }
+            return Optional.empty();
+
+        } catch (SQLException e) {
+            throw new DataBaseOperationException(
+                    String.format("Failed to find exchange rates with cross convert '%s' to '%s' from the database",
+                            baseCurrencyCode, targetCurrencyCode)
+            );
+        }
+    }
+
+    public Optional<ExchangeRates> findCrossRateByBases(String baseCurrencyCode, String targetCurrencyCode) {
+        final String FIND_BY_CROSS_CONVERT_SQL = """
+                select er1.id as id,
+                       baseCr1.id as base_currency_id,
+                       baseCr2.id as target_currency_id,
+                       round(er2.rate / er1.rate, 4) as rate
+                from exchange_rates er1
+                         join currencies baseCr1 on baseCr1.id = er1.target_currency_id
+                         join exchange_rates er2 on er2.base_currency_id = er1.base_currency_id
+                         join currencies baseCr2 on baseCr2.id = er2.target_currency_id
+                         join currencies bc on bc.id = er1.base_currency_id
                 where baseCr1.code = ?
                   and baseCr2.code = ?
                 LIMIT 1;
