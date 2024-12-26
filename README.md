@@ -11,6 +11,13 @@ An educational project for currency conversion. This project implements a simple
 
 REST API for describing currencies and exchange rates. Allows you to view and edit lists of currencies and exchange rates, and calculate conversions of any amount from one currency to another.
 
+Project Goals:
+- Familiarity with the MVC pattern. 
+- Understanding REST API design principles. 
+- Hands-on experience with SQL and database integration. 
+- Deploying a Java application to a Linux-based server.
+
+
 ## Technologies
 
 - Java Servlets
